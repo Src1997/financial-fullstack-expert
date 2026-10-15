@@ -138,6 +138,10 @@ array/object, that data MUST use row-level columns or a child table.
 
 - Fixture SSOT: `app/db/fixtures/` (loaded by `app/db/seeders/`).
 - All seeders must be **idempotent** — never overwrite runtime data.
+- User accounts use **ensure-exists** semantics: `seed_users` creates
+  `admin`/`demo` when missing (default password `123456`, env-overridable
+  with warning) but never touches existing rows; `SEED_RESET_PASSWORDS=1`
+  explicitly opts in to password resets (demo/staging only).
 - Seed entry: `uv run python -m app.db.seed`.
 - Fixture export for MSW: `uv run python -m scripts.export_fixtures_json`.
 
@@ -146,6 +150,11 @@ array/object, that data MUST use row-level columns or a child table.
 - Settings: mixin-based (`_base`, `_server`, `_database`, `_auth`, `_logging`,
   `_crawler`, `_vendors`).
 - Env loading priority: `.env` (always) → `$ENV_FILE` (override) → process env.
+- ⚠️ `.env` is read by pydantic Settings and is **not** exported into
+  `os.environ`. Runtime code must read values via `get_settings()` —
+  `os.environ.get("SOME_ENV_KEY")` silently returns `None` even when the
+  key exists in `.env` (shipped as a real bug: the mock-candle switch
+  never took effect).
 - Never hardcode env vars, business rules, or feature flags.
 
 ### Logging

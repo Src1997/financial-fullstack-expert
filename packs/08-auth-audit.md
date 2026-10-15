@@ -25,6 +25,24 @@ frontend auth UI (→ pack 02 + web auth rules), verification (→ pack 11).
 
 Admin console **always** uses `local` (`force_local=True`).
 
+### Local vs upstream session classification
+
+`_is_local_session()` (`app/domains/auth/service.py`) routes every request
+to the local stack or the upstream delegate:
+
+- `aud in ("impersonation", "admin", "client")` → **local**
+- claims carry both `jti` + `exp` → **local** (local JWTs always do;
+  upstream `claims_from_userinfo` only yields `sub`/`username`/`role`)
+- otherwise → **upstream**
+
+Failure mode seen in production debugging: the check only recognized
+`aud=impersonation` / `mock.` prefix, so locally issued client JWTs were
+forwarded upstream (401), the C-end cleared its token on restore, and
+`/navigation/menu` silently ran as anonymous — capability-gated modules
+(e.g. chat) disappeared for logged-in users. When touching token issuance
+or the session resolver, verify **both** directions: local tokens resolve
+locally, upstream tokens still delegate.
+
 ### Security layers (in order)
 
 1. **Turnstile** — `require_turnstile_token()` on login/register/send-code.

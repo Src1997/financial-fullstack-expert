@@ -48,6 +48,28 @@ Fetch strategy: **JSON API first**; SSR `var xxx = {...}` via
 parsed before persistence; rich-text body may stay raw HTML only from trusted
 editorial sources (frontend renders via `v-html` after `DOMPurify`).
 
+### Upstream empty-data fallbacks (demo-env pattern)
+
+When an upstream source returns empty/blocked data (Finnhub forex candles
+behind a paywall, placeholder rows without titles), normalizers/adapters may
+fill deterministic fallback data so the C-end is not blank:
+
+- Gate behind a Settings flag defaulting to `False` (production never
+  renders mock market data), e.g. `quote_candles_mock_fallback`.
+- Derive values from real data (prev_close / order-book mid), seeded
+  per-symbol for stable output across requests.
+- Real upstream data always wins when present.
+- Normalize away junk upstream rows (e.g. calendar events with empty
+  titles) instead of persisting them.
+
+### Candle data chain (debug trap)
+
+All C-end candlestick charts call `GET /api/quote/candles`
+(`FinnhubQuoteAdapter` → Finnhub; empty upstream → mock fallback above).
+The `fin_data_center_order_books.candles` column is **written but not
+consumed by the frontend** — patching that table will not fix a "chart
+shows no data" report; check the `/quote/candles` chain first.
+
 ### Scheduler levels + three processes
 
 | Level | Cadence | Examples |

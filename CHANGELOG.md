@@ -2,6 +2,23 @@
 
 > Tracks pack-level changes. Follows Keep-a-Changelog format.
 
+## [0.7.1] — 2026-10-15
+
+### Added — VM 演练环境调试沉淀（re-verified against sub-repo rules 2026-10-15）
+
+- **03 API Architecture** — Seed data safety 补 ensure-exists 账号语义
+  （`seed_users` 保底 admin/demo、密码不覆盖、`SEED_RESET_PASSWORDS=1`
+  显式重置）；Config management 补 ⚠️ `.env` 由 pydantic Settings 读取、
+  **不写入 `os.environ`**，运行时必须 `get_settings()`（真实事故：mock
+  K 线开关读环境变量永远拿不到 .env 值）。
+- **07 Crawler** — 新增 Upstream empty-data fallbacks（demo-env 模式：
+  开关默认 False、从真实数据派生、真实数据优先、上游垃圾行过滤）与
+  Candle data chain 调试陷阱（订单簿 `candles` 列前端不消费，K 线图
+  排查先看 `/api/quote/candles` 链）。
+- **08 Auth** — 新增 Local vs upstream session classification
+  （`_is_local_session` 判据：aud 三元组 / jti+exp；含本次 C 端登录
+  失效根因复盘：本地 JWT 误判→上游 401→匿名权限链→聊天被过滤）。
+
 ## [0.7.0] — 2026-10-08
 
 ### Added — P1 packs delivered (04–12, previously repo-fallback only)
